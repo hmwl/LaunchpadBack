@@ -32,7 +32,7 @@
 ## 构建 Build
 
 ```bash
-git clone https://github.com/<you>/LaunchpadBack.git
+git clone https://github.com/hmwl/LaunchpadBack.git
 cd LaunchpadBack
 bash build.sh --install     # 编译 → 安装到 /Applications/启动台.app → 启动
 bash build.sh --dist        # 生成 build/启动台.zip（Apple 芯片 + Intel 通用二进制）
