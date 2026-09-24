@@ -109,6 +109,7 @@ struct BackgroundView: View {
     var body: some View {
         ZStack {
             if let image {
+                Color.black
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)
@@ -203,9 +204,16 @@ struct IconCell: View {
         ZStack {
             if selected {
                 let h = s / 2 + metrics.labelOffset + metrics.labelHeight / 2 + 16
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(metrics.darkLabels ? Color.black.opacity(0.1) : Color.white.opacity(0.2))
-                    .frame(width: min(metrics.cell.width - 4, s + 30), height: h)
+                Group {
+                    if visuals.glass {
+                        GlassSurface(shape: RoundedRectangle(cornerRadius: 14, style: .continuous),
+                                     clear: true, tint: .clear, fallbackOpacity: 0.12)
+                    } else {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(metrics.darkLabels ? Color.black.opacity(0.06) : Color.white.opacity(0.12))
+                    }
+                }
+                .frame(width: min(metrics.cell.width - 4, s + 30), height: h)
                     .offset(y: (metrics.labelOffset + metrics.labelHeight / 2 - s / 2) / 2)
             }
 
@@ -355,11 +363,14 @@ struct SearchField: View {
         let shape = RoundedRectangle(cornerRadius: 5 * k, style: .continuous)
         ZStack(alignment: on ? .leading : .center) {
             if glass {
-                GlassSurface(shape: shape, tint: Color.white.opacity(on ? 0.14 : 0.04), fallbackOpacity: on ? 0.2 : 0.1)
-                shape.strokeBorder(Color.white.opacity(on ? 0.45 : 0), lineWidth: 1)
+                // Real Liquid Glass; highlight = brighter tint + rim, never an opaque fill.
+                GlassSurface(shape: shape, clear: true, tint: .clear, fallbackOpacity: 0.16)   // same clear glass idle or typing
+                shape.strokeBorder(Color.white.opacity(on ? 0.5 : 0.18), lineWidth: on ? 1 : 0.5)
             } else {
-                shape.fill(Color.white.opacity(on ? 0.2 : 0.1))
-                shape.strokeBorder(Color.white.opacity(on ? 0.5 : 0.22), lineWidth: on ? 1 : 0.5)
+                // A light frosted strip with a thin dark base so it reads on bright and dark wallpapers alike.
+                shape.fill(Color.black.opacity(0.08))
+                shape.fill(Color.white.opacity(on ? 0.26 : 0.18))
+                shape.strokeBorder(Color.white.opacity(on ? 0.6 : 0.32), lineWidth: on ? 1 : 0.6)
             }
 
             // Placeholder: centred while idle, slides to the left once the field is active.
@@ -369,9 +380,9 @@ struct SearchField: View {
                         .font(.system(size: 10 * k, weight: .semibold))
                     Text(L10n.t("搜索", "Search"))
                         .font(.system(size: 12.5 * k))
-                        .opacity(on ? 0.75 : 1)
                 }
-                .foregroundStyle(Color.white.opacity(on ? 0.6 : 0.5))
+                .foregroundStyle(Color.white.opacity(on ? 0.8 : 0.9))
+                .shadow(color: .black.opacity(0.35), radius: 1.2, y: 0.5)
                 .padding(.horizontal, on ? 7 * k : 0)
                 .allowsHitTesting(false)
             }
@@ -379,12 +390,13 @@ struct SearchField: View {
             HStack(spacing: 4 * k) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 10 * k, weight: .semibold))
-                    .foregroundStyle(Color.white.opacity(0.7))
+                    .foregroundStyle(Color.white.opacity(0.9))
                     .opacity(text.isEmpty ? 0 : 1)
                 TextField("", text: $text)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12.5 * k))
                     .foregroundStyle(Color.white)
+                    .shadow(color: .black.opacity(0.35), radius: 1.2, y: 0.5)
                     .focused(focus)
                     .focusEffectDisabled()
                 if !text.isEmpty {
@@ -403,7 +415,7 @@ struct SearchField: View {
             .opacity(on ? 1 : 0.001)   // idle: keep focus but hide the caret, like Launchpad
         }
         .frame(width: 250 * k, height: 24 * k)
-        .shadow(color: Color.white.opacity(on ? 0.18 : 0), radius: 4)
+        .modifier(FieldShadow(enabled: !glass, glow: on))   // no shadows in glass mode: they'd flatten the glass
     }
 }
 
@@ -504,7 +516,7 @@ struct FolderOverlayView: View {
             // Glass: the panel does the morph; icons just fade/settle in once it has mostly opened.
             .scaleEffect(expanded ? 1 : (glass ? 0.96 : 0.3), anchor: model.folderAnchor)
             .opacity(expanded ? 1 : 0)
-            .animation(glass ? (expanded ? .easeOut(duration: 0.2).delay(0.12) : .easeIn(duration: 0.1)) : nil,
+            .animation(glass ? (expanded ? .easeOut(duration: 0.18).delay(0.09) : .easeIn(duration: 0.1)) : nil,
                        value: expanded)
 
             PageDots(count: count, current: page, dark: !glass)
@@ -540,5 +552,20 @@ struct GlassSurface<S: InsettableShape>: View {
 
     private var fallback: some View {
         shape.fill(Color.white.opacity(fallbackOpacity))
+    }
+}
+
+private struct FieldShadow: ViewModifier {
+    let enabled: Bool
+    let glow: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 1)
+                .shadow(color: Color.white.opacity(glow ? 0.2 : 0), radius: 4)
+        } else {
+            content
+        }
     }
 }

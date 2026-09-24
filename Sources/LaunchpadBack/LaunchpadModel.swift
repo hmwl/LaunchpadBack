@@ -224,10 +224,10 @@ final class LaunchpadModel: ObservableObject {
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 10_000_000)
                 guard let self, self.openFolderID == id else { return }
-                withAnimation(.smooth(duration: 0.34)) { self.folderExpanded = true }
+                withAnimation(.smooth(duration: 0.3)) { self.folderExpanded = true }
             }
         } else {
-            withAnimation(.spring(response: 0.26, dampingFraction: 0.9)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.92)) {
                 openFolderID = id
                 folderExpanded = true
             }
@@ -240,9 +240,9 @@ final class LaunchpadModel: ObservableObject {
         selectedSlot = nil
         if animated && glassActive {
             // Glass: morph back into the tile, then drop the overlay.
-            withAnimation(.smooth(duration: 0.3)) { folderExpanded = false }
+            withAnimation(.smooth(duration: 0.26)) { folderExpanded = false }
             Task { [weak self] in
-                try? await Task.sleep(nanoseconds: 310_000_000)
+                try? await Task.sleep(nanoseconds: 270_000_000)
                 guard let self, self.openFolderID == id, !self.folderExpanded else { return }
                 self.openFolderID = nil
                 self.folderPage = 0
@@ -250,7 +250,7 @@ final class LaunchpadModel: ObservableObject {
             }
         } else {
             if animated {
-                withAnimation(.spring(response: 0.27, dampingFraction: 0.95)) {
+                withAnimation(.spring(response: 0.24, dampingFraction: 0.95)) {
                     openFolderID = nil
                     folderExpanded = false
                 }
